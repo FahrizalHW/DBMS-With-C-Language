@@ -1,18 +1,3 @@
-/*
- * Database Sederhana - Struktur Data (INF11107)
- * Ganti nama file ini menjadi <NIM>.c  (contoh: 1234567.c)
- *
- * Kompilasi : gcc -O2 -o 1234567 1234567.c
- * Jalankan  : ./1234567 GRT.dat      (Windows: 1234567 GRT.dat)
- *
- * Desain (agar kuat untuk file ~1,3 GB):
- *  - Seluruh isi file dibaca SEKALI ke satu blok memori besar (arena).
- *  - Karakter ',' dan '\n' diubah jadi '\0' langsung di arena, sehingga
- *    tiap record cukup disimpan sebagai 2 offset (8 byte), tanpa malloc per baris.
- *  - Array Rec[] menyimpan semua record (array dinamis, tumbuh dengan doubling).
- *  - tambah : O(1) amortized, ditambahkan ke memori + di-append ke file.
- *  - cari   : linear scan (substring case-insensitive tidak bisa pakai hash/BST).
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,8 +6,8 @@
 #include <stdint.h>
 
 typedef struct {
-    uint32_t nim;   /* offset NIM di arena  */
-    uint32_t nama;  /* offset NAMA di arena */
+    uint32_t nim;   
+    uint32_t nama;  
 } Rec;
 
 static char  *arena = NULL;
@@ -30,17 +15,16 @@ static size_t arena_len = 0, arena_cap = 0;
 static Rec   *recs = NULL;
 static size_t n_rec = 0, rec_cap = 0;
 static const char *path;
-static int disk_needs_nl = 0;   /* file lama tidak diakhiri newline */
+static int disk_needs_nl = 0;   
 
 static void die(const char *msg) {
     fprintf(stderr, "Error: %s\n", msg);
     exit(1);
 }
 
-/* ---------- memuat file ---------- */
 static void load_file(void) {
     FILE *f = fopen(path, "rb");
-    if (!f) {                                   /* file belum ada -> buat baru */
+    if (!f) {                                   
         f = fopen(path, "wb");
         if (!f) die("tidak bisa membuat file data.");
         fclose(f);
@@ -68,7 +52,6 @@ static void load_file(void) {
         disk_needs_nl = 1;
     }
 
-    /* pass 1: hitung baris */
     size_t lines = 0;
     char *p = arena, *end = arena + arena_len;
     while ((p = memchr(p, '\n', (size_t)(end - p))) != NULL) { lines++; p++; }
@@ -77,7 +60,6 @@ static void load_file(void) {
     recs = malloc(rec_cap * sizeof(Rec));
     if (!recs) die("memori tidak cukup untuk index.");
 
-    /* pass 2: parse in-place */
     char *line = arena;
     while (line < end) {
         char *nl = memchr(line, '\n', (size_t)(end - line));
@@ -172,7 +154,7 @@ static void rtrim(char *s) {
     size_t n = strlen(s);
     while (n > 0 && (s[n-1] == ' ' || s[n-1] == '\t' || s[n-1] == '\r' || s[n-1] == '\n')) s[--n] = '\0';
 }
-static char *next_token(char **s) {         /* ambil kata, geser pointer */
+static char *next_token(char **s) {         
     char *p = skip_sp(*s);
     if (!*p) { *s = p; return NULL; }
     char *start = p;
@@ -208,11 +190,11 @@ int main(int argc, char *argv[]) {
     for (;;) {
         printf("Your command: ");
         fflush(stdout);
-        if (!fgets(buf, sizeof buf, stdin)) break;        /* EOF */
+        if (!fgets(buf, sizeof buf, stdin)) break;        
         rtrim(buf);
         char *rest = buf;
         char *cmd = next_token(&rest);
-        if (!cmd) continue;                                /* baris kosong */
+        if (!cmd) continue;                                
         rtrim(rest);
 
         if (strcmp(cmd, "berhenti") == 0) break;
